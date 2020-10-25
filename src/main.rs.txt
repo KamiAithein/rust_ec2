@@ -21,7 +21,6 @@ async fn main() {
     let iam_cred_file = File::open("C:/Users/k3nne/Documents/aws/credentials/mc-server/new_user_credentials.csv").unwrap();
     set_env_cred_from(iam_cred_file).await;
 
-    //REFACTOR AS FUCK HOLY SHIT THIS SOURCE CODE LOOKS SHIT AF JESUS CHRIST
     let mut ec2 = ec2::instance::Ec2Object::retrieve("i-0005f52626f71c0d9").await.unwrap();
     ec2.status().await;
     ec2.start().await;
