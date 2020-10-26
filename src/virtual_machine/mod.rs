@@ -1,2 +1,2 @@
-pub(crate) mod vm;
-pub(crate) mod ec2;
+pub mod vm;
+pub mod ec2;

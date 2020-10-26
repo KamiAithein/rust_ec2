@@ -10,6 +10,7 @@ use rusoto_sts::{StsClient, StsAssumeRoleSessionCredentialsProvider};
 use std::error::Error;
 
 use async_trait::async_trait;
+use crate::virtual_machine::vm::VMNetwork;
 
 const AMI_TYPE:&str = "t2.micro";
 const AMI_ID:&str = "ami-07efac79022b86107"; //ubuntu
@@ -39,11 +40,11 @@ impl Ec2Object {
     }
     /// returns default provider using environment credentials and const default values defined
     ///     in instance.rs
-    fn default_provider() -> StsAssumeRoleSessionCredentialsProvider {
+    fn default_provider(role_arn:&str) -> StsAssumeRoleSessionCredentialsProvider {
         let sts = rusoto_sts::StsClient::new(Self::default_region());
         StsAssumeRoleSessionCredentialsProvider::new(
             sts,
-            ROLE_ARN.to_string(),
+            role_arn.to_string(),
             PROVIDER_SESSION_NAME.to_string(),
             None,
             None,
@@ -52,8 +53,8 @@ impl Ec2Object {
         )
     }
     /// returns ec2_client using default region and default provider
-    fn default_ec2_client() -> rusoto_ec2::Ec2Client {
-        Ec2Client::new_with(HttpClient::new().unwrap(), Self::default_provider(), Self::default_region())
+    fn default_ec2_client(role_arn:&str) -> rusoto_ec2::Ec2Client {
+        Ec2Client::new_with(HttpClient::new().unwrap(), Self::default_provider(role_arn), Self::default_region())
     }
     /// returns DescribeInstanceResult from creating default DescribeInstanceRequest
     async fn describe_instances(client: &Ec2Client) -> DescribeInstancesResult {
@@ -105,8 +106,8 @@ impl Ec2Object {
 }
 #[async_trait]
 impl crate::virtual_machine::vm::VMCore for Ec2Object {
-    async fn retrieve(instance_id: &str) -> Option<Self> {
-        let ec2_client = Self::default_ec2_client();
+    async fn retrieve(instance_id: &str, role_arn:&str) -> Option<Self> {
+        let ec2_client = Self::default_ec2_client(role_arn);
 
         return match Self::get_instance(&ec2_client, &instance_id.to_string()).await {
             Some(instance) =>
@@ -239,6 +240,12 @@ impl crate::virtual_machine::vm::VMCore for Ec2Object {
         }
         return Ok("running".to_string());//TODO actual status
         //-----------------------------------------------------------------------------------------
+    }
+}
+#[async_trait]
+impl VMNetwork for Ec2Object {
+    async fn get_public_ip(&self) -> Option<String>{
+        return Self::get_instance(&self.client, &self.instance_id).await?.public_ip_address;
     }
 }
 // impl Ec2Object {

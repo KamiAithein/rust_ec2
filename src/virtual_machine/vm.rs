@@ -21,11 +21,11 @@ use async_trait::async_trait;
 //SSH_^^^
 /// Core features of a VM that already exists
 #[async_trait]
-pub(crate) trait VMCore: Sized {
+pub trait VMCore: Sized {
     /// Retrieves virtual_machine.ec2 instance from AWS services by id.
     /// If no instance with matching tag is found then None is returned
     /// Blocks thread until ec2 instance has status <running>
-    async fn retrieve(instance_id: &str) -> Option<Self>;
+    async fn retrieve(instance_id: &str, role_arn:&str) -> Option<Self>;
     /// Gets current status of this virtual_machine.ec2 instance
     /// returns None if couldn't find instance
     async fn status(&self) -> Option<String>;
@@ -39,13 +39,14 @@ pub(crate) trait VMCore: Sized {
     async fn start(&mut self) -> Result<String, Box<dyn Error>>;
 }
 #[async_trait]
-pub(crate) trait VMAdmin: Default {
+pub trait VMAdmin: Default {
     /// Creates a new virtual machine
     async fn new() -> Self;
     /// Terminates this virtual machine
     async fn terminate(&mut self) -> Result<String, Box<dyn Error>>;
 }
-
-pub(crate) trait SSH {
-
+#[async_trait]
+pub trait VMNetwork {
+    ///returns public ip address of this ec2. Ec2 returns None if ec2 not running
+    async fn get_public_ip(&self) -> Option<String>;
 }
